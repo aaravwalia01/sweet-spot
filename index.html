@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host a Sweet Spot</title>
+<meta name="description" content="Student concept: the host page for the Sweet Spot pilot, a 24/7 Cupcake in a Jar machine.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="leaflet.css">
+<style>
+:root {
+  /* Black stage, pink accent: the same world as the deck. Layout: one tall column, the pink machine as the hero object. */
+  --ink: #0B0709;
+  --card: #161114;
+  --rule: #3E3439;
+  --text: #F6EEF3;
+  --body: #DDD3D9;
+  --muted: #A0949B;
+  --pink: #F7A1E5;
+  --blush: #E4659A;
+  --champ: #F4DAEA;
+  --plum: #8C3C6E;
+  --display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --sans: "Open Sauce", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+@font-face { font-family: "Open Sauce"; src: url(OpenSauce-Regular.ttf) format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Open Sauce"; src: url(OpenSauce-Bold.ttf) format("truetype"); font-weight: 700; font-display: swap; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--body); }
+body { font: 400 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; display: block; }
+a { color: var(--pink); }
+:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; color: var(--text); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h3 { line-height: 1.15; }
+#request, #how { scroll-margin-top: 70px; }
+h1 em, h2 em, h3 em { color: var(--pink); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+.kicker { font: 700 12px/1.2 var(--sans); letter-spacing: 0.24em; text-transform: uppercase; color: var(--pink); }
+.lede { font-size: 18px; color: var(--body); max-width: 34em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Concept banner: always visible */
+.concept { position: sticky; top: 0; z-index: 30; background: var(--plum); color: #fff; font: 700 12.5px/1.35 var(--sans); padding: 8px 20px; text-align: center; }
+.concept span { font-weight: 400; opacity: 0.92; }
+
+/* Nav */
+nav.top { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 16px 0; flex-wrap: wrap; }
+nav.top img { width: 132px; height: auto; }
+.tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px; }
+.tabs a { font: 700 13px/1 var(--sans); color: var(--muted); text-decoration: none; padding: 10px 14px; border-radius: 999px; white-space: nowrap; }
+.tabs a[aria-current="page"] { background: var(--pink); color: #000; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 40px; align-items: center; padding: 28px 0 56px; }
+.hero h1 { font-size: clamp(44px, 7vw, 84px); line-height: 0.98; margin: 14px 0 18px; }
+.hero .lede { margin: 0 0 26px; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 700 15px/1 var(--sans); padding: 16px 22px; border-radius: 999px; border: 0; cursor: pointer; text-decoration: none; transition: transform .15s ease, background .15s ease; }
+.btn-primary { background: var(--pink); color: #000; }
+.btn-primary:hover { background: var(--champ); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--rule); }
+.btn-ghost:hover { border-color: var(--pink); }
+.stage { position: relative; aspect-ratio: 4 / 5; border-radius: 28px; overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0 15%, transparent 15.5%) 0 0 / 78px 78px, var(--pink); }
+.stage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,7,9,0) 55%, rgba(11,7,9,0.55)); }
+.stage img.machine { position: absolute; left: 50%; bottom: 3%; height: 94%; width: auto; max-width: none; transform: translateX(-50%); filter: drop-shadow(0 30px 40px rgba(0,0,0,0.45)); z-index: 1; animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
+.stage .seal { position: absolute; right: 14px; top: 14px; width: 92px; z-index: 2; animation: spin 40s linear infinite; }
+.stage .tag { position: absolute; left: 14px; bottom: 14px; z-index: 2; background: #000; color: var(--text); border-radius: 14px; padding: 10px 12px; font: 700 12px/1.3 var(--sans); }
+.stage .tag b { color: var(--pink); display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+@keyframes rise { from { transform: translate(-50%, 8%); } to { transform: translate(-50%, 0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Terms strip */
+.terms { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.terms div { padding: 22px 16px; border-left: 1px solid var(--rule); }
+.terms div:first-child { border-left: 0; padding-left: 0; }
+.terms strong { display: block; font: 400 30px/1.05 var(--display); color: var(--pink); }
+.terms span { font-size: 14px; color: var(--body); }
+
+section.block { padding: 64px 0; }
+section.block h2 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.05; margin: 10px 0 14px; }
+
+/* Three columns */
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 22px; }
+.card h3 { font-size: 24px; margin-bottom: 8px; }
+.card p { margin: 0; font-size: 15px; }
+.card .label { font: 700 11px/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: block; }
+
+/* Estimator */
+.est { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; margin-top: 28px; }
+.est .controls { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 24px; }
+.est label { font: 700 13px/1.3 var(--sans); color: var(--text); display: block; margin-bottom: 14px; }
+.est input[type=range] { width: 100%; accent-color: var(--pink); height: 28px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { font: 700 13px/1 var(--sans); color: var(--body); background: transparent; border: 1px solid var(--rule); padding: 10px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--pink); color: var(--pink); }
+.est .result { background: var(--pink); color: #000; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+.est .result .big { font: 400 clamp(52px, 7vw, 76px)/0.95 var(--display); }
+.est .result .small { font-size: 14px; }
+.est .result .row { display: flex; justify-content: space-between; border-top: 1px solid rgba(0,0,0,.18); padding-top: 10px; font-size: 14px; }
+.fine { font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+
+/* Freshness with photo */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+.photo { border-radius: 22px; overflow: hidden; border: 1px solid var(--rule); }
+.photo img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4 / 3; }
+ul.ticks { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; }
+ul.ticks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+ul.ticks li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--pink); margin-top: 7px; }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 30px; counter-reset: s; }
+.steps li { list-style: none; padding: 18px 18px 0 0; border-top: 2px solid var(--rule); position: relative; }
+.steps li::before { counter-increment: s; content: counter(s); position: absolute; top: -15px; left: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--pink); color: #000; font: 700 13px/28px var(--sans); text-align: center; }
+.steps li h3 { font-size: 22px; margin: 10px 0 6px; }
+.steps li p { margin: 0; font-size: 14.5px; }
+.steps { padding: 0; }
+
+/* Form */
+.formwrap { background: var(--card); border: 1px solid var(--rule); border-radius: 24px; padding: 28px; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 32px; }
+form .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+form .full { grid-column: 1 / -1; }
+form label { font: 700 12.5px/1.2 var(--sans); color: var(--text); display: grid; gap: 7px; }
+form input, form select { font: 400 16px/1.2 var(--sans); color: var(--text); background: var(--ink); border: 1px solid var(--rule); border-radius: 12px; padding: 13px 14px; width: 100%; }
+form input:focus, form select:focus { border-color: var(--pink); outline: none; }
+.demo-note { display: flex; gap: 10px; align-items: flex-start; background: rgba(140,60,110,.25); border: 1px solid var(--plum); color: var(--champ); border-radius: 12px; padding: 10px 12px; font-size: 13px; margin: 16px 0; }
+.err { color: var(--blush); font-size: 13px; min-height: 18px; margin-top: 8px; }
+
+/* Confirmation */
+#done { display: none; }
+#done.show { display: block; }
+#formcard.hide { display: none; }
+.formwrap.thanks { grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
+.timeline { list-style: none; padding: 0; margin: 22px 0 0; }
+.timeline li { display: grid; grid-template-columns: 92px 18px 1fr; gap: 12px; }
+.timeline .when { font: 700 12px/1.3 var(--sans); color: var(--muted); padding-top: 3px; text-align: right; }
+.timeline .when b { display: block; color: var(--pink); letter-spacing: .12em; text-transform: uppercase; font-size: 11px; }
+.timeline .rail { position: relative; }
+.timeline .rail::before { content: ""; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--rule); }
+.timeline li:last-child .rail::before { bottom: auto; height: 12px; }
+.timeline .rail::after { content: ""; position: absolute; left: 3px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: 2px solid var(--pink); }
+.timeline li.now .rail::after { background: var(--pink); }
+.timeline .what { padding-bottom: 20px; }
+.timeline .what strong { color: var(--text); display: block; }
+.timeline .what span { font-size: 14px; }
+.openmail { margin-top: 8px; font: 700 12.5px/1 var(--sans); color: var(--pink); background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.openmail:hover { border-color: var(--pink); }
+.crm { background: var(--ink); border: 1px dashed var(--rule); border-radius: 18px; padding: 20px; align-self: start; }
+.crm dl { margin: 14px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 14px; }
+.crm dt { color: var(--muted); }
+.crm dd { margin: 0; color: var(--text); }
+.pill { display: inline-block; font: 700 11px/1 var(--sans); padding: 5px 8px; border-radius: 999px; background: var(--pink); color: #000; }
+
+/* Email modal */
+dialog { border: 0; padding: 0; border-radius: 20px; max-width: 560px; width: calc(100% - 32px); background: #fff; color: #222; }
+dialog::backdrop { background: rgba(11,7,9,.78); }
+.mail-head { background: #f3eef1; padding: 14px 18px; font-size: 13px; color: #555; border-bottom: 1px solid #e5dde2; }
+.mail-head b { color: #111; }
+.mail-body { padding: 26px 26px 20px; }
+.mail-body img { width: 120px; margin-bottom: 18px; }
+.mail-body h3 { font-family: var(--display); font-size: 28px; color: #111; margin: 0 0 12px; }
+.mail-body p { font-size: 15px; line-height: 1.55; margin: 0 0 12px; color: #333; }
+.mail-body ul { padding-left: 18px; margin: 0 0 14px; font-size: 15px; }
+.mail-body .mbtn { display: inline-block; background: #000; color: #fff; font: 700 14px/1 var(--sans); padding: 14px 20px; border-radius: 999px; margin: 6px 0 14px; }
+.mail-body .sig { font-size: 14px; color: #555; }
+.slot { background: #fde3f6; border: 1px dashed #d77fc4; border-radius: 6px; padding: 0 5px; font-weight: 700; color: #7a2c63; }
+.mail-foot { padding: 12px 18px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: #888; }
+.mail-foot button { font: 700 13px/1 var(--sans); background: #111; color: #fff; border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+
+/* Find view */
+#find-view { display: none; }
+body.find #host-view { display: none; }
+body.find #find-view { display: block; }
+.mapcard { background: var(--card); border: 1px solid var(--rule); border-radius: 22px; padding: 14px; }
+.mapsvg { width: 100%; height: auto; display: block; }
+.m-num { font: 700 8.5px var(--sans); fill: #000; text-anchor: middle; }
+.m-numb { font: 700 9px var(--sans); fill: var(--muted); text-anchor: middle; }
+.m-city { font: 700 6px var(--sans); fill: #6E6268; letter-spacing: 1.4px; }
+.m-state { font: 700 5.5px var(--sans); fill: #5A4E54; letter-spacing: 1.6px; }
+.m-lake { font: 700 6.5px var(--sans); fill: #4A3D44; letter-spacing: 3px; text-anchor: middle; }
+.m-ring { font: 700 5.5px var(--sans); fill: #5A4E54; letter-spacing: 1px; }
+.spots { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+.spots li { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.spots .d { width: 24px; height: 24px; border-radius: 50%; color: #000; font: 700 11px/24px var(--sans); text-align: center; }
+.spots b { color: var(--text); }
+.spots small { color: var(--muted); display: block; font-size: 13px; }
+.status { font: 700 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.status.live { color: var(--pink); }
+.findgrid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: start; margin-top: 26px; }
+.notify { display: flex; gap: 10px; margin-top: 18px; }
+.notify input { flex: 1; font: 400 16px var(--sans); color: var(--text); background: var(--ink); border: 1px solid var(--rule); border-radius: 999px; padding: 13px 16px; min-width: 0; }
+
+
+@media (min-width: 861px) { .findgrid > .mapcard { position: sticky; top: 56px; } }
+#livemap { height: 460px; border-radius: 14px; background: #0B0709; z-index: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 4px 2px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.ring { background: none; border: 1.5px dashed var(--muted); }
+.pin { width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #0B0709; color: #000; font: 700 12.5px/25px var(--sans); text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.55); transition: transform .15s ease; }
+.pin.live { width: 38px; height: 38px; line-height: 33px; font-size: 14px; box-shadow: 0 0 0 6px rgba(247,161,229,.28), 0 4px 14px rgba(0,0,0,.55); }
+.pin:hover { transform: scale(1.12); }
+.leaflet-container { font-family: var(--sans); }
+.leaflet-popup-content-wrapper { background: var(--card); color: var(--body); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.6); }
+.leaflet-popup-tip { background: var(--card); }
+.leaflet-popup-content { margin: 14px 16px; font-size: 13.5px; line-height: 1.45; }
+.leaflet-popup-content b.t { font: 400 19px/1.15 var(--display); color: var(--text); display: block; margin: 4px 0 4px; }
+.leaflet-popup-content .w { font: 700 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--pink); }
+.leaflet-popup-content .m { color: var(--muted); font-size: 12.5px; margin-top: 6px; display: block; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-control-attribution { background: rgba(11,7,9,.75) !important; color: #8a7e85 !important; font-size: 10px; }
+.leaflet-control-attribution a { color: #b9aab3 !important; }
+.leaflet-bar a { background: var(--card); color: var(--text); border-color: var(--rule); }
+.leaflet-bar a:hover { background: var(--rule); color: #fff; }
+.spots li { cursor: pointer; }
+.spots li:hover b, .spots li:focus-visible b { color: var(--pink); }
+.spots li.on { background: rgba(247,161,229,.07); }
+@media (max-width: 860px) { #livemap { height: 360px; } }
+footer { border-top: 1px solid var(--rule); padding: 30px 0 50px; margin-top: 40px; font-size: 13px; color: var(--muted); }
+footer .wrap { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center; }
+footer img { width: 110px; opacity: .9; }
+
+@media (max-width: 860px) {
+  .hero, .split, .est, .formwrap, .formwrap.thanks, .findgrid { grid-template-columns: 1fr; }
+  .formwrap { padding: 20px; }
+  .hero { padding-top: 12px; gap: 28px; }
+  .stage { aspect-ratio: 1 / 1.05; }
+  .terms { grid-template-columns: repeat(2, 1fr); }
+  .terms div { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); }
+  .terms div:first-child { grid-column: 1 / -1; border-top: 0; }
+  .three { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; row-gap: 34px; }
+  form .grid { grid-template-columns: 1fr; }
+  section.block { padding: 48px 0; }
+  nav.top img { width: 108px; }
+  .tabs { width: 100%; }
+  .tabs a { flex: 1; text-align: center; padding: 11px 8px; font-size: 13px; }
+}
+@media (max-width: 420px) {
+  .steps { grid-template-columns: 1fr; }
+  .timeline li { grid-template-columns: 74px 18px 1fr; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="concept" role="note">Student concept for a marketing competition. <span>Not an official Cute as a Cupcake! website. Forms on this page save nothing.</span></div>
+
+<div class="wrap">
+  <nav class="top" aria-label="Main">
+    <img src="logo_pink.webp" alt="Cute as a Cupcake!" width="520" height="236">
+    <div class="tabs" role="tablist">
+      <a href="#host" id="tab-host" aria-current="page">Host a Sweet Spot</a>
+      <a href="#find" id="tab-find">Find a Sweet Spot</a>
+    </div>
+  </nav>
+</div>
+
+<main>
+<div id="host-view">
+  <div class="wrap">
+    <header class="hero">
+      <div>
+        <div class="kicker">The Sweet Spot pilot · for buildings</div>
+        <h1>Make your building a <em>Sweet Spot.</em></h1>
+        <p class="lede">A 24/7 bakery in one pink machine. Scratch-made Cupcakes in a Jar from a Merrillville bakery that has been spreading the love since 2015. We do the work. Your people get dessert at any hour.</p>
+        <div class="ctas">
+          <a class="btn btn-primary" href="#request">Request a free tasting box</a>
+          <a class="btn btn-ghost" href="#how">See how the pilot works</a>
+        </div>
+      </div>
+      <div class="stage" aria-hidden="true">
+        <img class="machine" src="machine.webp" alt="" width="560" height="1181">
+        <div class="tag"><b>Sealed jars</b>Baked-on date on every lid</div>
+      </div>
+    </header>
+  </div>
+
+  <div class="wrap">
+    <div class="terms" role="list">
+      <div role="listitem"><strong>90 days</strong><span>A pilot with no long-term commitment</span></div>
+      <div role="listitem"><strong>$0 rent</strong><span>to start, and nothing to buy</span></div>
+      <div role="listitem"><strong>10%</strong><span>of every jar sold goes to you</span></div>
+      <div role="listitem"><strong>Easy exit</strong><span>Not working? We remove it at our cost.</span></div>
+      <div role="listitem"><strong>Insured</strong><span>Certificate naming your location on request</span></div>
+    </div>
+  </div>
+
+  <section class="block" aria-labelledby="h-deal">
+    <div class="wrap">
+      <div class="kicker">The deal</div>
+      <h2 id="h-deal">You give us a corner. <em>We do everything else.</em></h2>
+      <div class="three">
+        <div class="card"><span class="label">What you get</span><h3>An amenity people talk about</h3><p>Fresh dessert at any hour, cashless and tap to pay, plus a share of every jar sold. A certified women-owned supplier for your diversity goals.</p></div>
+        <div class="card"><span class="label">What we handle</span><h3>Delivery to cleaning</h3><p>Installation, restocking, cleaning, maintenance and the machine itself. Your team does nothing.</p></div>
+        <div class="card"><span class="label">What we need</span><h3>Four things</h3><p>Floor space for one machine, a standard outlet, an internet connection, and access for restocking.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-est" style="padding-top:0">
+    <div class="wrap">
+      <div class="kicker">Your share</div>
+      <h2 id="h-est">What could <em>your building</em> earn?</h2>
+      <div class="est">
+        <div class="controls">
+          <label for="jars">Jars sold per week: <span id="jarsOut" class="num">150</span></label>
+          <input id="jars" type="range" min="25" max="288" step="1" value="150" aria-describedby="jarsHelp">
+          <div class="chips" role="group" aria-label="Quick picks">
+            <button type="button" class="chip" data-j="75" aria-pressed="false">Quiet spot · 75</button>
+            <button type="button" class="chip" data-j="150" aria-pressed="true">Steady · 150</button>
+            <button type="button" class="chip" data-j="288" aria-pressed="false">Sells out weekly · 288</button>
+          </div>
+          <p class="fine" id="jarsHelp">A full machine holds 288 jars. Jars sell for $9 and you keep 10% of sales during the pilot.</p>
+        </div>
+        <div class="result" aria-live="polite">
+          <div>
+            <div class="small">Your share, per month</div>
+            <div class="big num" id="month">$585</div>
+          </div>
+          <div>
+            <div class="row"><span>Per year</span><b class="num" id="year">$7,020</b></div>
+            <div class="row"><span>Jars a month</span><b class="num" id="jm">650</b></div>
+          </div>
+        </div>
+      </div>
+      <p class="fine">An illustration, not a promise. Once your machine is live, the monthly report shows your real jars and your real share.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-fresh" style="padding-top:0">
+    <div class="wrap split">
+      <div class="photo"><img src="interior.webp" alt="Inside the Cute as a Cupcake! bake shop in Merrillville: pink walls, a bakery case and the logo sign" width="1400" height="714" loading="lazy"></div>
+      <div>
+        <div class="kicker">Is it fresh?</div>
+        <h2 id="h-fresh">From this bakery, <em>not a factory.</em></h2>
+        <ul class="ticks">
+          <li><span>Every jar is sealed and chilled, with a baked-on date on the lid.</span></li>
+          <li><span>A "stocked fresh today" card on the machine after every restock.</span></li>
+          <li><span>Sealed jars keep 30 days in the fridge, so nothing sits past its best.</span></li>
+          <li><span>Two layers of cake, two of icing, ready to eat. Not a mix.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how" aria-labelledby="h-how" style="padding-top:0">
+    <div class="wrap">
+      <div class="kicker">How it works</div>
+      <h2 id="h-how">Four steps, <em>about three weeks.</em></h2>
+      <ol class="steps">
+        <li><h3>Tasting box</h3><p>Six jars for your team, on us. Taste it before you decide anything.</p></li>
+        <li><h3>Site check</h3><p>A 20 minute walk-through: power, internet and the best spot.</p></li>
+        <li><h3>Launch day</h3><p>We install the machine and bring the pink truck out front.</p></li>
+        <li><h3>Monthly report</h3><p>Jars sold, best hours, top flavor and your share, every month.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="request" aria-labelledby="h-req" style="padding-top:0">
+    <div class="wrap">
+      <div class="formwrap" id="formcard">
+        <div>
+          <div class="kicker">Start here</div>
+          <h2 id="h-req" style="font-size:clamp(32px,4.2vw,46px);margin:10px 0 14px">Request your <em>free tasting box.</em></h2>
+          <p>Tell us about your building. You'll get the host kit by email today and six jars on your desk this week.</p>
+          <img src="cutie.webp" alt="" width="300" height="289" style="width:110px;margin-top:22px">
+        </div>
+        <form id="hostform" novalidate>
+          <div class="grid">
+            <label for="f-name">Your name<input id="f-name" name="name" autocomplete="off" placeholder="Dana Brooks"></label>
+            <label for="f-role">Your role<input id="f-role" name="role" autocomplete="off" placeholder="Dining services director"></label>
+            <label class="full" for="f-org">Building or organization<input id="f-org" name="org" autocomplete="off" placeholder="Northwest Indiana campus, student union"></label>
+            <label for="f-type">Type of building
+              <select id="f-type" name="type">
+                <option>Campus</option><option>Hospital</option><option>Mall</option><option>Office</option><option>Other</option>
+              </select>
+            </label>
+            <label for="f-traffic">People through a day
+              <select id="f-traffic" name="traffic">
+                <option>Under 500</option><option selected>500 to 2,000</option><option>2,000 to 5,000</option><option>Over 5,000</option>
+              </select>
+            </label>
+            <label class="full" for="f-email">Work email<input id="f-email" name="email" type="email" autocomplete="off" placeholder="dana@example.edu"></label>
+          </div>
+          <div class="demo-note"><span aria-hidden="true">●</span><span>Demo form. Nothing you type is sent or saved: it only shows what a host would see next.</span></div>
+          <button class="btn btn-primary" type="submit" style="width:100%">Request my tasting box</button>
+          <div class="err" id="err" role="alert"></div>
+        </form>
+      </div>
+
+      <div id="done" aria-live="polite">
+        <div class="formwrap thanks">
+          <div>
+            <div class="kicker">Request received</div>
+            <h2 id="thanksTitle" style="font-size:clamp(32px,4.2vw,46px);margin:10px 0 8px">Your tasting box <em>is on its way.</em></h2>
+            <p style="margin:0">Here is everything that happens next, and when. Open any email to see exactly what lands in your inbox.</p>
+            <ol class="timeline" id="timeline"></ol>
+            <button class="btn btn-ghost" type="button" id="again">Start over</button>
+          </div>
+          <aside class="crm" aria-label="What the bakery sees">
+            <div class="kicker" style="color:var(--muted)">Behind the scenes</div>
+            <h3 style="font-size:24px;margin-top:8px">What Michelle sees</h3>
+            <p style="font-size:14px;margin:6px 0 0">The request lands in a free CRM as a new host lead. The host emails send on their own. Michelle steps in for the site check.</p>
+            <dl id="crm"></dl>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="find-view">
+  <div class="wrap">
+    <header style="padding:20px 0 0">
+      <div class="kicker">Find a Sweet Spot</div>
+      <h1 style="font-size:clamp(40px,6vw,72px);line-height:1;margin:14px 0 14px">Dessert at any hour, <em>near you.</em></h1>
+      <p class="lede">Every pink machine is a Sweet Spot. The bake shop machine is live today. The rest are planned locations in this concept. Tap a place to find it on the map.</p>
+    </header>
+    <div class="findgrid">
+      <div class="mapcard"><div id="livemap" aria-label="Map of Sweet Spots around Merrillville and Chicago"></div><div id="svgmap" hidden><svg class="mapsvg" role="img" aria-label="Map of the planned Sweet Spots around Merrillville and Chicago" viewBox="0 0 460 340" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="mapclip"><rect width="460" height="340" rx="6"/></clipPath></defs>
+<g clip-path="url(#mapclip)"><rect width="460" height="340" fill="#0B0709"/><path d="M148.7,-4.1 L161.3,12.8 L160.0,38.2 L172.2,68.4 L186.6,92.6 L194.8,110.8 L200.2,128.9 L212.8,138.0 L233.2,150.0 L251.2,162.1 L280.6,178.5 L303.2,185.1 L321.3,181.5 L350.7,172.4 L377.8,162.1 L407.1,153.1 L447.8,136.1 L479.4,116.8 L480,-20 L148.7,-20 Z" fill="#140D12"/><path d="M148.7,-4.1 L161.3,12.8 L160.0,38.2 L172.2,68.4 L186.6,92.6 L194.8,110.8 L200.2,128.9 L212.8,138.0 L233.2,150.0 L251.2,162.1 L280.6,178.5 L303.2,185.1 L321.3,181.5 L350.7,172.4 L377.8,162.1 L407.1,153.1 L447.8,136.1 L479.4,116.8" fill="none" stroke="#4A3D44" stroke-width="1"/><circle cx="271.2" cy="266.9" r="87.6" fill="none" stroke="#3E3439" stroke-width="0.8" stroke-dasharray="2 3"/><text x="351.6" y="308.1" class="m-ring">10 MI</text><circle cx="271.2" cy="266.9" r="175.2" fill="none" stroke="#3E3439" stroke-width="0.8" stroke-dasharray="2 3"/><text x="107.6" y="212.8" class="m-ring">20 MI</text><circle cx="271.2" cy="266.9" r="262.9" fill="none" stroke="#3E3439" stroke-width="0.8" stroke-dasharray="2 3"/><text x="197.4" y="15.6" class="m-ring">30 MI</text><line x1="197.0" y1="134.9" x2="197.0" y2="350" stroke="#3E3439" stroke-width="0.8" stroke-dasharray="5 4"/><text x="191.0" y="332" class="m-state" text-anchor="end">ILLINOIS</text><text x="203.0" y="332" class="m-state">INDIANA</text><text x="343.9" y="68.4" class="m-lake">LAKE MICHIGAN</text><text x="130.6" y="28.5" class="m-city" text-anchor="end">CHICAGO</text><text x="271.6" y="198.4" class="m-city" text-anchor="middle">GARY</text><text x="257.1" y="269.1" class="m-city" text-anchor="end">MERRILLVILLE</text><text x="416.2" y="255.8" class="m-city" text-anchor="middle">VALPARAISO</text><text x="298.7" y="319.9" class="m-city" text-anchor="start">CROWN POINT</text><text x="51.1" y="189.3" class="m-city" text-anchor="middle">ORLAND PARK</text><text x="208.3" y="186.3" class="m-city" text-anchor="middle">HAMMOND</text><circle cx="271.2" cy="266.9" r="16" fill="#F7A1E5" opacity="0.14"/><line x1="271.2" y1="266.9" x2="258.2" y2="256.9" stroke="#A0949B" stroke-width="0.7"/><circle cx="271.2" cy="266.9" r="1.6" fill="#A0949B"/><circle cx="258.2" cy="256.9" r="8" fill="#F7A1E5" stroke="#000" stroke-width="1.2"/><text x="258.2" y="259.9" class="m-num">1</text><line x1="294.3" y1="269.9" x2="306.3" y2="267.9" stroke="#A0949B" stroke-width="0.7"/><circle cx="294.3" cy="269.9" r="1.6" fill="#A0949B"/><circle cx="306.3" cy="267.9" r="8" fill="#F7A1E5" stroke="#000" stroke-width="1.2"/><text x="306.3" y="270.9" class="m-num">2</text><line x1="284.1" y1="275.2" x2="288.1" y2="287.2" stroke="#A0949B" stroke-width="0.7"/><circle cx="284.1" cy="275.2" r="1.6" fill="#A0949B"/><circle cx="288.1" cy="287.2" r="8" fill="#F7A1E5" stroke="#000" stroke-width="1.2"/><text x="288.1" y="290.2" class="m-num">3</text><circle cx="220.8" cy="200.9" r="8" fill="#F7A1E5" stroke="#000" stroke-width="1.2"/><text x="220.8" y="203.9" class="m-num">4</text><circle cx="205.6" cy="219.2" r="8" fill="#E4659A" stroke="#000" stroke-width="1.2"/><text x="205.6" y="222.2" class="m-num">5</text><circle cx="288.0" cy="318.0" r="8" fill="#E4659A" stroke="#000" stroke-width="1.2"/><text x="288.0" y="321.0" class="m-num">6</text><circle cx="281.1" cy="215.4" r="8" fill="#E4659A" stroke="#000" stroke-width="1.2"/><text x="281.1" y="218.4" class="m-num">7</text><circle cx="414.4" cy="271.6" r="8" fill="#E4659A" stroke="#000" stroke-width="1.2"/><text x="414.4" y="274.6" class="m-num">8</text><circle cx="103.4" cy="116.1" r="8" fill="#F4DAEA" stroke="#000" stroke-width="1.2"/><text x="103.4" y="119.1" class="m-num">9</text><circle cx="51.0" cy="177.4" r="8" fill="#F4DAEA" stroke="#000" stroke-width="1.2"/><text x="51.0" y="180.4" class="m-num">10</text><circle cx="161.1" cy="74.8" r="8" fill="#F4DAEA" stroke="#000" stroke-width="1.2"/><text x="161.1" y="77.8" class="m-num">11</text><circle cx="141.2" cy="27.0" r="8" fill="#F4DAEA" stroke="#000" stroke-width="1.2"/><text x="141.2" y="30.0" class="m-num">12</text><circle cx="80.5" cy="119.6" r="7" fill="#000" stroke="#A0949B" stroke-width="1" stroke-dasharray="2 1.5"/><text x="80.5" y="122.2" class="m-numb">+</text></g>
+<rect x="0.5" y="0.5" width="459" height="339" rx="6" fill="none" stroke="#3E3439"/></svg></div><div class="legend"><span><i style="background:#F7A1E5"></i>Wave 1 · month 6</span><span><i style="background:#E4659A"></i>Wave 2 · month 12</span><span><i style="background:#F4DAEA"></i>Wave 3 · month 18</span><span><i class="ring"></i>10, 20, 30 miles from the bake shop</span></div></div>
+      <div>
+        <ul class="spots" id="spots"></ul>
+        <form id="notifyform" novalidate>
+          <p style="margin:22px 0 0;color:var(--text);font-weight:700">Get a heads-up when one opens near you</p>
+          <div class="notify">
+            <label for="n-email" style="position:absolute;left:-9999px">Email</label>
+            <input id="n-email" type="email" placeholder="you@example.com" autocomplete="off">
+            <button class="btn btn-primary" type="submit">Notify me</button>
+          </div>
+          <p class="fine" id="nmsg">Demo form. Nothing is sent or saved.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <img src="logo_pink.webp" alt="" width="520" height="236">
+    <div>A student concept by Aarav Walia, Evan Cournoyer and Kyle Raia for a digital marketing competition.<br>Not affiliated with or published by Cute as a Cupcake! Brand assets used for the competition only.</div>
+  </div>
+</footer>
+
+<dialog id="mail" aria-labelledby="mailSubject">
+  <div class="mail-head">
+    <div><b>From:</b> Michelle at Cute as a Cupcake!</div>
+    <div><b>Subject:</b> <span id="mailSubject"></span></div>
+    <div style="margin-top:2px"><b>Preview:</b> <span id="mailPreview"></span></div>
+  </div>
+  <div class="mail-body" id="mailBody"></div>
+  <div class="mail-foot"><span>Sample email from the concept. Not sent.</span><button type="button" id="mailClose">Close</button></div>
+</dialog>
+
+<script src="leaflet.js"></script>
+<script>
+(function () {
+  // ---------- Views (hash routing) ----------
+  function route() {
+    var find = location.hash === "#find";
+    document.body.classList.toggle("find", find);
+    document.getElementById("tab-host").setAttribute("aria-current", find ? "false" : "page");
+    document.getElementById("tab-find").setAttribute("aria-current", find ? "page" : "false");
+    if (location.hash === "#find" || location.hash === "#host") window.scrollTo(0, 0);
+  }
+  window.addEventListener("hashchange", route);
+  route();
+
+  // ---------- Earnings estimator ----------
+  var PRICE = 9, SHARE = 0.10, WEEKS = 52 / 12;
+  var jars = document.getElementById("jars");
+  var chips = document.querySelectorAll(".chip");
+  function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+  function calc() {
+    var j = +jars.value, perMonth = j * WEEKS;
+    document.getElementById("jarsOut").textContent = j;
+    document.getElementById("jm").textContent = Math.round(perMonth).toLocaleString("en-US");
+    document.getElementById("month").textContent = money(perMonth * PRICE * SHARE);
+    document.getElementById("year").textContent = money(j * 52 * PRICE * SHARE);
+    chips.forEach(function (c) { c.setAttribute("aria-pressed", String(+c.dataset.j === j)); });
+  }
+  jars.addEventListener("input", calc);
+  chips.forEach(function (c) { c.addEventListener("click", function () { jars.value = c.dataset.j; calc(); }); });
+  calc();
+
+  // ---------- Dates ----------
+  function addDays(n) { var d = new Date(); d.setDate(d.getDate() + n); return d; }
+  function fmt(d) { return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
+
+  // ---------- Emails ----------
+  var who = { first: "there", org: "your building", type: "Campus" };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  var mails = {
+    d0: {
+      subject: "Your Sweet Spot host kit is inside",
+      preview: "Six tasting jars are on their way to you.",
+      body: function () { return "<h3>Your host kit is inside.</h3>" +
+        "<p>Hi " + esc(who.first) + ",</p>" +
+        "<p>Thank you for raising your hand for " + esc(who.org) + ". Six jars are on their way to your desk this week, so your team can taste before you decide anything.</p>" +
+        "<p>In the kit:</p><ul><li>The pilot terms on one page</li><li>An earnings estimate for a building like yours</li><li>Answers to the questions hosts ask first</li></ul>" +
+        "<a class='mbtn'>Open my host kit</a>" +
+        "<p class='sig'>Michelle Wainwright<br>Founder, Cute as a Cupcake!</p>"; }
+    },
+    d3: {
+      subject: "How the 90-day pilot works (no rent)",
+      preview: "Floor space, an outlet and internet. We do the rest.",
+      body: function () { return "<h3>The pilot, in one minute.</h3>" +
+        "<p>Hi " + esc(who.first) + ", here is exactly how it works:</p>" +
+        "<ul><li><b>90 days</b>, no long-term commitment</li><li><b>No rent to start.</b> We pay you 10% of sales</li><li>We handle delivery, restocking, cleaning and the machine</li><li>Not working? We remove it at our cost</li></ul>" +
+        "<p>After 90 days you choose: keep the revenue share, or switch to a flat monthly fee.</p>" +
+        "<a class='mbtn'>Read the full terms</a>" +
+        "<p class='sig'>Michelle</p>"; }
+    },
+    d7: {
+      subject: "90 days at the mall: the numbers",
+      preview: "What the first Sweet Spot did in its first 90 days.",
+      body: function () { return "<h3>90 days at the mall.</h3>" +
+        "<p>Hi " + esc(who.first) + ", our first host machine has finished its pilot. Here is what it did:</p>" +
+        "<ul><li>Jars sold: <span class='slot'>from the dashboard</span></li><li>Best hour: <span class='slot'>from the dashboard</span></li><li>The host's share: <span class='slot'>from the dashboard</span></li></ul>" +
+        "<p>Every number comes straight from the machine, the same report you would get each month.</p>" +
+        "<a class='mbtn'>See the full story</a>" +
+        "<p class='sig'>Michelle</p>" +
+        "<p style='font-size:12px;color:#999'>Highlighted fields fill in with real results once the mall pilot has them. We don't invent them.</p>"; }
+    },
+    d12: {
+      subject: "Pick a date for your site check",
+      preview: "20 minutes. Power, internet and the best spot.",
+      body: function () { return "<h3>Let's find the spot.</h3>" +
+        "<p>Hi " + esc(who.first) + ", the next step is a 20 minute walk-through at " + esc(who.org) + ". We check power, internet and where people actually walk, then leave you a one-page agreement to look over.</p>" +
+        "<a class='mbtn'>Book my site check</a>" +
+        "<p class='sig'>Michelle</p>"; }
+    },
+    report: {
+      subject: "Your Sweet Spot: monthly report",
+      preview: "Jars, your share, best hour, top flavor.",
+      body: function () { return "<h3>Your Sweet Spot this month.</h3>" +
+        "<p>Hi " + esc(who.first) + ", here is how the machine at " + esc(who.org) + " did:</p>" +
+        "<ul><li>Jars sold: <span class='slot'>live data</span></li><li>Your share (10%): <span class='slot'>live data</span></li><li>Best hour: <span class='slot'>live data</span></li><li>Top flavor: <span class='slot'>live data</span></li></ul>" +
+        "<p>Filled in automatically from the machine's cloud dashboard. Nobody types these numbers.</p>" +
+        "<a class='mbtn'>Ready for a second Sweet Spot?</a>" +
+        "<p class='sig'>Michelle</p>"; }
+    }
+  };
+  var dlg = document.getElementById("mail");
+  function openMail(k) {
+    var m = mails[k];
+    document.getElementById("mailSubject").textContent = m.subject;
+    document.getElementById("mailPreview").textContent = m.preview;
+    document.getElementById("mailBody").innerHTML = "<img src='logo_black.webp' alt='Cute as a Cupcake!' onerror=\"this.src='logo_pink.webp'\">" + m.body();
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  document.getElementById("mailClose").addEventListener("click", function () { dlg.close ? dlg.close() : dlg.removeAttribute("open"); });
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+
+  // ---------- Timeline ----------
+  var steps = [
+    { d: 0, label: "Today", t: "Host kit email", s: "One-page terms, an earnings estimate and the FAQ.", mail: "d0", now: true },
+    { d: 2, label: "This week", t: "Six tasting jars on your desk", s: "Delivered by our team. Share them around." },
+    { d: 3, label: "Day 3", t: "How the 90-day pilot works", s: "The terms, and the easy exit.", mail: "d3" },
+    { d: 7, label: "Day 7", t: "90 days at the mall: the numbers", s: "Proof from a host like you.", mail: "d7" },
+    { d: 12, label: "Day 12", t: "Pick a date for your site check", s: "One button to book. Michelle calls you.", mail: "d12" },
+    { d: 21, label: "About 3 weeks", t: "Launch day", s: "Machine installed, pink truck out front, an email for your people." },
+    { d: 51, label: "Every month", t: "Your monthly report", s: "Jars, your share, best hour, top flavor.", mail: "report" }
+  ];
+  function buildTimeline() {
+    var ol = document.getElementById("timeline");
+    ol.innerHTML = "";
+    steps.forEach(function (st) {
+      var li = document.createElement("li");
+      if (st.now) li.className = "now";
+      li.innerHTML = "<div class='when'><b>" + st.label + "</b>" + (st.d < 40 ? fmt(addDays(st.d)) : "") + "</div><div class='rail'></div>" +
+        "<div class='what'><strong>" + st.t + "</strong><span>" + st.s + "</span>" +
+        (st.mail ? "<br><button type='button' class='openmail' data-m='" + st.mail + "'>Open this email</button>" : "") + "</div>";
+      ol.appendChild(li);
+    });
+    ol.querySelectorAll(".openmail").forEach(function (b) { b.addEventListener("click", function () { openMail(b.dataset.m); }); });
+  }
+
+  function buildCRM() {
+    var rows = [
+      ["Lead", esc(who.full) + (who.role ? ", " + esc(who.role) : "")],
+      ["Building", esc(who.org)],
+      ["Type", esc(who.type) + " · " + esc(who.traffic) + " a day"],
+      ["Source", "Host page (tagged by QR code or ad)"],
+      ["Sequence", "<span class='pill'>Host emails · Day 0 sent</span>"],
+      ["Next for Michelle", "Tasting box out by " + fmt(addDays(2))],
+      ["Site score", "At the site check: 22 of 30 or better on the location scorecard"],
+      ["Counts toward", "100 qualified host leads in year one"]
+    ];
+    document.getElementById("crm").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
+  }
+
+  // ---------- Host form (saves nothing) ----------
+  var form = document.getElementById("hostform");
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = form.name.value.trim(), org = form.org.value.trim();
+    if (!name || !org) { document.getElementById("err").textContent = "Add your name and building so we know where to send the jars."; return; }
+    document.getElementById("err").textContent = "";
+    who = { full: name, first: name.split(/\s+/)[0], role: form.role.value.trim(), org: org, type: form.type.value, traffic: form.traffic.value };
+    document.getElementById("thanksTitle").innerHTML = "Thanks, " + esc(who.first) + ". Your tasting box <em>is on its way.</em>";
+    buildTimeline(); buildCRM();
+    document.getElementById("formcard").classList.add("hide");
+    document.getElementById("done").classList.add("show");
+    form.reset();
+    document.getElementById("request").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.getElementById("again").addEventListener("click", function () {
+    document.getElementById("done").classList.remove("show");
+    document.getElementById("formcard").classList.remove("hide");
+    document.getElementById("f-name").focus();
+  });
+
+  // ---------- Find view ----------
+  var spots = [[1, "The bake shop", "2008 W 81st Ave, Merrillville", "Live", "#F7A1E5", 41.47164, -87.36071, "Machine already live", "Wave 1 \u00b7 by month 6", 0.0], [2, "Southlake Mall", "Hobart", "Planned", "#F7A1E5", 41.46671, -87.30966, "6M+ visitors a year", "Wave 1 \u00b7 by month 6", 2.7], [3, "Methodist Hospitals Southlake", "Merrillville", "Planned", "#F7A1E5", 41.45795, -87.33228, "About 300 beds, open 24/7", "Wave 1 \u00b7 by month 6", 1.7], [4, "Purdue University Northwest", "Hammond", "Planned", "#F7A1E5", 41.58084, -87.47238, "6,101 students on campus", "Wave 1 \u00b7 by month 6", 9.5], [5, "Community Hospital", "Munster", "Planned", "#E4659A", 41.55068, -87.50598, "458 beds, 3,000+ staff", "Wave 2 \u00b7 by month 12", 9.3], [6, "Franciscan Health", "Crown Point", "Planned", "#E4659A", 41.38728, -87.32354, "207 beds, open 24/7", "Wave 2 \u00b7 by month 12", 6.1], [7, "Indiana University Northwest", "Gary", "Planned", "#E4659A", 41.55684, -87.33889, "About 3,000 students", "Wave 2 \u00b7 by month 12", 6.0], [8, "Valparaiso University", "Valparaiso", "Planned", "#E4659A", 41.46394, -87.04388, "About 2,600 students", "Wave 2 \u00b7 by month 12", 16.4], [9, "Advocate Christ Medical Center", "Oak Lawn", "Planned", "#F4DAEA", 41.7212, -87.7322, "105,000+ ER visits a year", "Wave 3 \u00b7 by month 18", 25.8], [10, "Orland Square Mall", "Orland Park", "Planned", "#F4DAEA", 41.6198, -87.84822, "Largest mall in Chicago's south suburbs", "Wave 3 \u00b7 by month 18", 27.2], [11, "UChicago Medicine", "Hyde Park, Chicago", "Planned", "#F4DAEA", 41.78953, -87.60447, "811 licensed beds", "Wave 3 \u00b7 by month 18", 25.3], [12, "University of Illinois Chicago", "Chicago", "Planned", "#F4DAEA", 41.8686, -87.64844, "35,869 students, a record", "Wave 3 \u00b7 by month 18", 31.2]];
+  document.getElementById("spots").innerHTML = spots.map(function (s) {
+    return "<li data-n='" + s[0] + "' tabindex='0' role='button' aria-label='Show " + s[1] + " on the map'><span class='d' style='background:" + s[4] + "'>" + s[0] + "</span><span><b>" + s[1] + "</b><small>" + s[2] + " · " + s[7] + "</small></span>" +
+      "<span class='status" + (s[3] === "Live" ? " live" : "") + "'>" + (s[3] === "Live" ? "Open now" : "Planned") + "</span></li>";
+  }).join("");
+
+  // ---------- Live map (real streets via CARTO tiles; falls back to the drawn map offline) ----------
+  var shop = [41.47164, -87.36072];
+  var markers = {};
+  function svgFallback() {
+    document.getElementById("livemap").hidden = true;
+    document.getElementById("svgmap").hidden = false;
+  }
+  var map = null;
+  function initMap() {
+    if (map || !window.L) { if (!window.L) svgFallback(); return; }
+    map = L.map("livemap", { scrollWheelZoom: false, zoomControl: true, attributionControl: true, zoomSnap: 0.25 });
+    map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+    var loaded = 0, failed = 0;
+    var tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd", maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+    tiles.on("tileload", function () { loaded++; });
+    tiles.on("tileerror", function () { failed++; });
+    setTimeout(function () { if (loaded === 0) svgFallback(); }, 4500);
+    [10, 20, 30].forEach(function (mi) {
+      L.circle(shop, { radius: mi * 1609.34, color: "#F7A1E5", weight: 1, opacity: .35, dashArray: "4 6", fill: false, interactive: false }).addTo(map);
+    });
+    var bounds = [];
+    spots.forEach(function (s) {
+      var live = s[3] === "Live";
+      var icon = L.divIcon({ className: "", html: "<div class='pin" + (live ? " live" : "") + "' style='background:" + s[4] + "'>" + s[0] + "</div>", iconSize: live ? [38, 38] : [30, 30], iconAnchor: live ? [19, 19] : [15, 15], popupAnchor: [0, -14] });
+      var m = L.marker([s[5], s[6]], { icon: icon, title: s[1], zIndexOffset: live ? 1000 : 0, keyboard: true }).addTo(map);
+      m.bindPopup("<span class='w'>" + (live ? "Open now" : s[8]) + "</span><b class='t'>" + s[1] + "</b>" + s[7] + "<span class='m'>" + s[2] + (live ? "" : " · " + s[9] + " miles from the bake shop") + "</span>");
+      markers[s[0]] = m; bounds.push([s[5], s[6]]);
+    });
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }
+  function focusSpot(n) {
+    if (!map || document.getElementById("livemap").hidden) return;
+    var m = markers[n]; if (!m) return;
+    if (window.innerWidth < 860) document.getElementById("livemap").scrollIntoView({ behavior: "smooth", block: "center" });
+    map.flyTo(m.getLatLng(), 12, { duration: 0.8 }); m.openPopup();
+    document.querySelectorAll(".spots li").forEach(function (li) { li.classList.toggle("on", li.dataset.n == n); });
+  }
+  document.getElementById("spots").addEventListener("click", function (e) { var li = e.target.closest("li"); if (li) focusSpot(+li.dataset.n); });
+  document.getElementById("spots").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { var li = e.target.closest("li"); if (li) { e.preventDefault(); focusSpot(+li.dataset.n); } } });
+  function onRoute() { if (location.hash === "#find") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); } }
+  window.addEventListener("hashchange", onRoute); onRoute();
+  document.getElementById("notifyform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    document.getElementById("nmsg").textContent = "Demo only: in the real version you'd get a \"new Sweet Spot near you\" email. Nothing was saved.";
+    this.reset();
+  });
+})();
+</script>
+</body>
+</html>
